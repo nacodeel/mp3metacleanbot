@@ -10,13 +10,13 @@ from aiogram.types import FSInputFile
 
 from mutagen.id3 import ID3
 
-
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 app = FastAPI()
+
 
 
 # =========================
