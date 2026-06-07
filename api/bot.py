@@ -69,11 +69,14 @@ async def start(message: types.Message):
 # MP3 handler
 # =========================
 
-@dp.message(lambda message: message.document)
+@dp.message(lambda message: message.audio or message.document)
 async def handle_mp3(message: types.Message):
-    document = message.document
 
-    if not document.file_name.lower().endswith(".mp3"):
+    audio_obj = message.audio or message.document
+
+    file_name = audio_obj.file_name or "audio.mp3"
+
+    if not file_name.lower().endswith(".mp3"):
         await message.answer(
             "Поддерживаются только MP3 файлы."
         )
@@ -83,7 +86,7 @@ async def handle_mp3(message: types.Message):
         "Скачиваю файл..."
     )
 
-    file = await bot.get_file(document.file_id)
+    file = await bot.get_file(audio_obj.file_id)
 
     file_url = (
         f"https://api.telegram.org/file/bot"
@@ -91,9 +94,10 @@ async def handle_mp3(message: types.Message):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:
+
         input_path = os.path.join(
             tmpdir,
-            document.file_name
+            file_name
         )
 
         response = requests.get(file_url)
@@ -112,6 +116,7 @@ async def handle_mp3(message: types.Message):
         metadata_before = get_mp3_metadata(input_path)
 
         if metadata_before:
+
             metadata_text = "\n".join([
                 f"{k}: {v}"
                 for k, v in metadata_before.items()
@@ -141,34 +146,30 @@ async def handle_mp3(message: types.Message):
         remove_mp3_metadata(input_path)
 
         # =========================
-        # Verify cleanup
+        # Verify
         # =========================
 
         await status_message.edit_text(
-            "Проверяю результат..."
+            "Проверяю очистку..."
         )
 
         metadata_after = get_mp3_metadata(input_path)
 
         if metadata_after:
+
             verification_text = "\n".join([
                 f"{k}: {v}"
                 for k, v in metadata_after.items()
             ])
 
-            if len(verification_text) > 3500:
-                verification_text = (
-                    verification_text[:3500] + "\n..."
-                )
-
             await message.answer(
-                "После очистки остались метаданные:\n\n"
+                "После очистки остались:\n\n"
                 f"{verification_text}"
             )
 
         else:
             await message.answer(
-                "Все метаданные успешно удалены."
+                "Все метаданные удалены."
             )
 
         # =========================
@@ -176,14 +177,14 @@ async def handle_mp3(message: types.Message):
         # =========================
 
         await status_message.edit_text(
-            "Отправляю очищенный файл..."
+            "Отправляю очищенный MP3..."
         )
 
         cleaned_file = FSInputFile(input_path)
 
         await message.answer_document(
             document=cleaned_file,
-            caption="MP3 очищен от метаданных."
+            caption="MP3 очищен."
         )
 
         await status_message.delete()
