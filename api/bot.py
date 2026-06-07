@@ -68,13 +68,12 @@ async def start(message: types.Message):
 # =========================
 # MP3 handler
 # =========================
-
-@dp.message(lambda message: message.audio or message.document)
+@dp.message(lambda message: message.audio)
 async def handle_mp3(message: types.Message):
 
-    audio_obj = message.audio or message.document
+    audio = message.audio
 
-    file_name = audio_obj.file_name or "audio.mp3"
+    file_name = audio.file_name or "audio.mp3"
 
     if not file_name.lower().endswith(".mp3"):
         await message.answer(
@@ -83,10 +82,10 @@ async def handle_mp3(message: types.Message):
         return
 
     status_message = await message.answer(
-        "Скачиваю файл..."
+        "Скачиваю аудио..."
     )
 
-    file = await bot.get_file(audio_obj.file_id)
+    file = await bot.get_file(audio.file_id)
 
     file_url = (
         f"https://api.telegram.org/file/bot"
@@ -146,7 +145,7 @@ async def handle_mp3(message: types.Message):
         remove_mp3_metadata(input_path)
 
         # =========================
-        # Verify
+        # Verify cleanup
         # =========================
 
         await status_message.edit_text(
@@ -162,28 +161,33 @@ async def handle_mp3(message: types.Message):
                 for k, v in metadata_after.items()
             ])
 
+            if len(verification_text) > 3500:
+                verification_text = (
+                    verification_text[:3500] + "\n..."
+                )
+
             await message.answer(
-                "После очистки остались:\n\n"
+                "После очистки остались метаданные:\n\n"
                 f"{verification_text}"
             )
 
         else:
             await message.answer(
-                "Все метаданные удалены."
+                "Все метаданные успешно удалены."
             )
 
         # =========================
-        # Send cleaned file
+        # Send cleaned audio
         # =========================
 
         await status_message.edit_text(
             "Отправляю очищенный MP3..."
         )
 
-        cleaned_file = FSInputFile(input_path)
+        cleaned_audio = FSInputFile(input_path)
 
-        await message.answer_document(
-            document=cleaned_file
+        await message.answer_audio(
+            audio=cleaned_audio
         )
 
         await status_message.delete()
