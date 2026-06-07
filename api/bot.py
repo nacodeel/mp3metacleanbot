@@ -183,8 +183,7 @@ async def handle_mp3(message: types.Message):
         cleaned_file = FSInputFile(input_path)
 
         await message.answer_document(
-            document=cleaned_file,
-            caption="MP3 очищен."
+            document=cleaned_file
         )
 
         await status_message.delete()
